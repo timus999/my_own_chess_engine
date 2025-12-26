@@ -8,11 +8,6 @@ fn main() {
     set_bit(&mut bb, 0); // Set A1
     assert!(get_bit(bb, 0));
 
-    let mut bb2 = RANK_2;
-    while let Some(sq) = pop_lsb(&mut bb2) {
-        println!("Pawn on square {}", sq);
-    }
-
     // Initial chess position
     // let board =
     //     Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap();
@@ -30,7 +25,11 @@ fn main() {
     // let board = Board::from_fen("3K4/8/8/8/8/8/7P/8 w - - 0 1").unwrap();
 
     // en passant
-    let board = Board::from_fen("8/8/8/3pP3/8/8/8/3K4 w - d6 0 1").unwrap();
+    // let board = Board::from_fen("8/8/8/3pP3/8/8/8/3K4 w - d6 0 1").unwrap();
+    let mut board =
+        Board::from_fen("r1bqk2r/ppp2ppp/2n2n2/3pp3/3PP3/2NB1N2/PPPQ1PPP/R3K2R w KQkq - 0 1")
+            .unwrap();
+
     println!("Starting position loaded!");
     println!("{:?}", board);
     let pseudo_moves = board.generate_pseudo_moves();
@@ -38,6 +37,14 @@ fn main() {
         print!("{}, ", m.to_long_algebraic(&board));
     }
 
+    let best_move = pseudo_moves[0];
+    println!("Best move: {}", best_move.to_long_algebraic(&board));
+
+    // apply the best move
+    board.apply_move(&best_move);
+
+    println!("Board after move:");
+    println!("{:?}", board);
     // println!("");
     // println!("{:?}", pseudo_moves);
 }

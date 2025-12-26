@@ -6,9 +6,9 @@ use crate::utils::*;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Move {
-    from: Square,
-    to: Square,
-    promotion: Option<PieceType>, // For pawns
+    pub from: Square,
+    pub to: Square,
+    pub promotion: Option<PieceType>, // For pawns
 }
 impl Move {
     pub fn moving_piece(&self, board: &Board) -> Option<PieceType> {
