@@ -274,7 +274,6 @@ impl Board {
         // === BISHOPS ===
         let bishops = self.pieces[color as usize][PieceType::Bishop as usize];
         let mut bishop_bb = bishops;
-        println!("bishop: {:b}", bishop_bb);
         while let Some(from) = pop_lsb(&mut bishop_bb) {
             let attacks = self.bishop_attacks(from, occupied) & !own_pieces;
             add_moves!(from, attacks);

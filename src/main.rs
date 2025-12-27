@@ -32,6 +32,7 @@ fn main() {
 
     println!("Starting position loaded!");
     println!("{:?}", board);
+    board.print_board();
     let pseudo_moves = board.generate_pseudo_moves();
     for m in pseudo_moves.clone() {
         print!("{}, ", m.to_long_algebraic(&board));
@@ -44,7 +45,8 @@ fn main() {
     board.apply_move(&best_move);
 
     println!("Board after move:");
-    println!("{:?}", board);
+    board.print_board();
+
     // println!("");
     // println!("{:?}", pseudo_moves);
 }
