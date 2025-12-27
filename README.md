@@ -113,7 +113,7 @@ Example: If a max node finds a value > beta, prune; saves ~50-90% computations.
 Visual Representation:
 
 ![alhpa_beta_pruning](https://daxg39y63pxwu.cloudfront.net/images/blog/alpha-beta-pruning-in-ai/Alpha_Beta_Purning_in_AI.webp) 
-![alpha_beta_pruning_in_chess](https://figures.semanticscholar.org/3c5cdc5fb590fc56ac429884216f8e0ce31c8164/3-Figure2-1.png`)
+![alpha_beta_pruning_in_chess](https://figures.semanticscholar.org/3c5cdc5fb590fc56ac429884216f8e0ce31c8164/3-Figure2-1.png)
 
 
 
