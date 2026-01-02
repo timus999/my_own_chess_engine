@@ -1,7 +1,7 @@
 use crate::constants::*;
 use crate::utils::*;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct Board {
     // Piece bitboards [color][piece_type]
     pub pieces: [[Bitboard; 6]; 2],

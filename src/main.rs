@@ -26,25 +26,32 @@ fn main() {
 
     // en passant
     // let board = Board::from_fen("8/8/8/3pP3/8/8/8/3K4 w - d6 0 1").unwrap();
-    let mut board =
-        Board::from_fen("r1bqk2r/ppp2ppp/2n2n2/3pp3/3PP3/2NB1N2/PPPQ1PPP/R3K2R w KQkq - 0 1")
-            .unwrap();
+    // let mut board =
+    //     Board::from_fen("r1bqk2r/ppp2ppp/2n2n2/3pp3/3PP3/2NB1N2/PPPQ1PPP/R3K2R w KQkq - 0 1")
+    //         .unwrap();
 
+    let mut board =
+        Board::from_fen("r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 3")
+            .unwrap();
     println!("Starting position loaded!");
     println!("{:?}", board);
     board.print_board();
-    let pseudo_moves = board.generate_pseudo_moves();
-    for m in pseudo_moves.clone() {
+    let moves = board.generate_legal_moves();
+    // let qh5 = moves
+    //     .iter()
+    //     .find(|m| m.from == 3 && m.to == 41 && m.promotion.is_none()); // d1h5
+
+    for m in moves.clone() {
         print!("{}, ", m.to_long_algebraic(&board));
     }
 
-    let best_move = pseudo_moves[0];
-    println!("Best move: {}", best_move.to_long_algebraic(&board));
+    // let best_move = pseudo_moves[-1];
+    // println!("Best move: {}", best_move.to_long_algebraic(&board));
 
     // apply the best move
-    board.apply_move(&best_move);
+    // board.apply_move(&best_move);
 
-    println!("Board after move:");
+    // println!("Board after move:");
     board.print_board();
 
     // println!("");

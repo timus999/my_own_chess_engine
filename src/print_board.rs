@@ -55,10 +55,10 @@ impl Board {
                     {
                         'k'
                     } else {
-                        '0'
+                        '_'
                     }
                 } else {
-                    '0'
+                    '_'
                 };
                 print!("{} ", char);
             }
