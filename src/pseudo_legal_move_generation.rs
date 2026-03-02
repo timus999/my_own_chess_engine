@@ -77,6 +77,207 @@ impl Move {
             piece_char, from_str, capture, to_str, promo_str
         )
     }
+
+    pub fn from_algebric(s: &str, board: &Board) -> Result<Self, String> {
+        let s = s.trim().to_lowercase();
+
+        // Handle castling first (special case)
+        if s == "o-o" || s == "O-O" || s == "oo" {
+            return Self::parse_castling(board, true); // kingside
+        }
+
+        if s == "o-o-o" || s == "O-O-O" || s == "ooo" {
+            return Self::parse_castling(board, false); // queenside
+        }
+
+        // Long algebraic: e2e4, e7e4, b1c3 etc....
+
+        if s.len() >= 4 && s.len() <= 5 && s.chars().nth(1).unwrap().is_ascii_digit() {
+            return Self::parse_long_algebraic(&s, board);
+        }
+
+        // Otherwise assume it's SAN ( short algebraic): Nf3, Bxc4, e8=Q, dxe8Q
+
+        Self::parse_san(&s, board)
+    }
+
+    fn parse_long_algebraic(s: &str, board: &Board) -> Result<Self, String> {
+        if s.len() < 4 {
+            return Err("Long algebraic too short".to_string());
+        }
+
+        let capture = s.len() == 5;
+        let mut idx = 0;
+
+        let from_file = s.chars().nth(idx).ok_or("Missing from file")?;
+        let from_rank = s.chars().nth(idx + 1).ok_or("Missing from rank")?;
+        if capture {
+            idx += 1;
+        }
+        let to_file = s.chars().nth(idx + 2).ok_or("Missing to file")?;
+        let to_rank = s.chars().nth(idx + 3).ok_or("Missing to rank")?;
+
+        let from = algebraic_to_square(&format!("{}{}", from_file, from_rank))?;
+        let to = algebraic_to_square(&format!("{}{}", to_file, to_rank))?;
+
+        // let promotion = if s.len() == 5 {
+        //     let p = s.chars().nth(4).unwrap();
+        //     Some(char_to_promotion(p)?)
+        // } else {
+        //     None
+        // };
+
+        // Basic validation: there should be a piece on 'from'
+        if board.get_piece_at(from, board.turn).is_none() {
+            return Err(format!("No piece on {}", square_to_algebraic(from)));
+        }
+
+        Ok(Move {
+            from,
+            to,
+            promotion: None,
+        })
+    }
+
+    fn parse_castling(board: &Board, kingside: bool) -> Result<Self, String> {
+        let color = board.turn;
+        let king_sq = board.king_square(color);
+
+        let expected_to = if kingside {
+            if color == Color::White {
+                6
+            } else {
+                62
+            }
+        } else {
+            if color == Color::White {
+                2
+            } else {
+                58
+            }
+        };
+
+        // we don't check legality here - caller should verify it's in legal moves
+        Ok(Move {
+            from: king_sq,
+            to: expected_to,
+            promotion: None,
+        })
+    }
+
+    fn parse_san(s: &str, board: &Board) -> Result<Self, String> {
+        // This is more complex -  we need to:
+        // 1. Parse piece type (optional -> pawn)
+        // 2. Parse file/rank disambiguation
+        // 3. Parse capture 'x'
+        // 4. Parse destination square
+        // 5. Parse promotion '=Q' or 'q'
+        //
+
+        let mut chars = s.chars().peekable();
+
+        // Piece Type
+        let piece_char = chars.peek().cloned().unwrap_or('p');
+        let piece = match piece_char.to_ascii_uppercase() {
+            'N' => PieceType::Knight,
+            'B' => PieceType::Bishop,
+            'R' => PieceType::Rook,
+            'Q' => PieceType::Queen,
+            'K' => PieceType::King,
+            _ => PieceType::Pawn,
+        };
+
+        if piece != PieceType::Pawn {
+            chars.next(); // consume piece letter
+        }
+
+        // Optional file disambiguation
+        let mut from_file: Option<char> = None;
+        if let Some(c) = chars.peek() {
+            if c.is_ascii_lowercase() && ('a'..='h').contains(c) {
+                from_file = Some(*c);
+                chars.next();
+            }
+        }
+
+        // Optional rank disambiguation
+        let mut from_rank: Option<char> = None;
+        if let Some(c) = chars.peek() {
+            if c.is_ascii_digit() {
+                from_rank = Some(*c);
+                chars.next();
+            }
+        }
+
+        // Capture 'x' ?
+        let is_capture = chars.peek() == Some(&'x');
+        if is_capture {
+            chars.next();
+        }
+
+        // Destination square (required)
+        let dest_file = chars.next().ok_or("Missing destination file")?;
+        let dest_rank = chars.next().ok_or("Missing destination rank")?;
+
+        let to_square = algebraic_to_square(&format!("{}{}", dest_file, dest_rank))?;
+
+        // promotion
+        let mut promotion = None;
+        if let Some(c) = chars.next() {
+            if c == '=' || c == '+' || c == '#' {
+                // skip = or check/checkmate symbols for now
+                if let Some(p) = chars.next() {
+                    promotion = Some(char_to_promotion(p)?);
+                }
+            } else {
+                promotion = Some(char_to_promotion(c)?);
+            }
+        }
+
+        // Now find matching move among legal moves
+        let legal_moves = board.generate_legal_moves();
+
+        let candidates: Vec<&Move> = legal_moves
+            .iter()
+            .filter(|m| {
+                if m.to != to_square {
+                    return false;
+                }
+                if board.get_piece_at(m.from, board.turn) != Some(piece) {
+                    return false;
+                }
+
+                // Disambiguation
+                if let Some(f) = from_file {
+                    if square_to_file(m.from) != f {
+                        return false;
+                    }
+                }
+
+                if let Some(r) = from_rank {
+                    if square_to_rank(m.from) != r {
+                        return false;
+                    }
+                }
+
+                // Promotion match
+                if m.promotion != promotion {
+                    return false;
+                }
+                true
+            })
+            .collect();
+
+        match candidates.len() {
+            0 => Err(format!("No matching move found for {}", s)),
+            1 => Ok(*candidates[0]),
+            _ => Err(format!(
+                "Ambiguous move : {} ({} possibilities)",
+                s,
+                candidates.len()
+            )),
+        }
+    }
 }
 
 fn square_to_algebraic(sq: Square) -> String {
@@ -84,7 +285,53 @@ fn square_to_algebraic(sq: Square) -> String {
     let rank = (sq / 8) + 1;
     format!("{}{}", file as char, rank)
 }
+
+fn algebraic_to_square(s: &str) -> Result<Square, String> {
+    if s.len() != 2 {
+        return Err("Algebraic notation must be 2 chars (e4)".to_string());
+    }
+
+    let file = s.chars().nth(0).unwrap() as u8;
+    let rank = s.chars().nth(1).unwrap() as u8;
+
+    if !('a'..='h').contains(&(file as char)) || !('1'..='8').contains(&(rank as char)) {
+        return Err(format!("Invalid square: {}", s));
+    }
+
+    let file_idx = file - b'a';
+    let rank_idx = rank - b'1';
+
+    Ok(rank_idx * 8 + file_idx)
+}
+
+fn char_to_promotion(c: char) -> Result<PieceType, String> {
+    match c.to_ascii_lowercase() {
+        'q' => Ok(PieceType::Queen),
+        'r' => Ok(PieceType::Rook),
+        'b' => Ok(PieceType::Bishop),
+        'n' => Ok(PieceType::Knight),
+        _ => Err(format!("Invalid promotion piece: {}", c)),
+    }
+}
+
+fn square_to_file(sq: Square) -> char {
+    (b'a' + (sq % 8)) as char
+}
+
+fn square_to_rank(sq: Square) -> char {
+    (b'1' + (sq / 8)) as char
+}
+
 impl Board {
+    pub fn get_piece_at(&self, sq: Square, color: Color) -> Option<PieceType> {
+        let idx = color as usize;
+        for pt in 0..6 {
+            if get_bit(self.pieces[idx][pt], sq) {
+                return PieceType::from_usize(pt);
+            }
+        }
+        None
+    }
     pub fn generate_pseudo_moves(&self) -> Vec<Move> {
         let mut moves = Vec::new();
         let color = self.turn;

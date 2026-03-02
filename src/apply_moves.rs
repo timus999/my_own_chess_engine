@@ -163,4 +163,9 @@ impl Board {
         // Flip turn
         self.turn = opp_color;
     }
+    pub fn make_move(&self, mv: &Move) -> Board {
+        let mut new_board = self.clone();
+        new_board.apply_move(mv);
+        new_board
+    }
 }

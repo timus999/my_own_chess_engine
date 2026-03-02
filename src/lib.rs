@@ -1,6 +1,7 @@
 pub mod apply_moves;
 pub mod attack;
 pub mod constants;
+pub mod core_algo;
 pub mod initialize_board;
 pub mod legal_move_generation;
 pub mod pawn_directions;

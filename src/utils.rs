@@ -42,3 +42,8 @@ pub fn msb(bb: Bitboard) -> Square {
     debug_assert!(bb != 0, "msb called an empty bitboard");
     63 - bb.leading_zeros() as Square
 }
+
+#[inline(always)]
+pub fn popcount(bb: Bitboard) -> i32 {
+    bb.count_ones() as i32
+}
