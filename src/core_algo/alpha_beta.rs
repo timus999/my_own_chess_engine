@@ -1,5 +1,6 @@
-use crate::{Board, Color, Move};
-
+use crate::constants::Color;
+use crate::initialize_board::Board;
+use crate::pseudo_legal_move_generation::Move;
 const MATE: i32 = 30_000;
 const INF: i32 = 1_000_000;
 pub fn alpha_beta(board: &mut Board, depth: u8, mut alpha: i32, mut beta: i32) -> i32 {

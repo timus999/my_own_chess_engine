@@ -1,3 +1,6 @@
+use crate::initialize_board::Board;
+use std::io::Read;
+
 use crate::constants::*;
 /// Set a bit at the given square (0-63)
 #[inline(always)]
@@ -46,4 +49,14 @@ pub fn msb(bb: Bitboard) -> Square {
 #[inline(always)]
 pub fn popcount(bb: Bitboard) -> i32 {
     bb.count_ones() as i32
+}
+
+// Returns array of legal destinations for a piece
+pub fn legal_destinations(board: &Board, from: Square) -> Vec<Square> {
+    board
+        .generate_legal_moves()
+        .iter()
+        .filter(|m| m.from == from)
+        .map(|m| m.to)
+        .collect::<Vec<Square>>()
 }

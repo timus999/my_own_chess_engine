@@ -182,6 +182,42 @@ impl Board {
 
         Ok(board)
     }
+
+    pub fn to_array_flipped(&self) -> [i8; 64] {
+        let original = self.to_array();
+        let mut flipped = [0i8; 64];
+
+        for i in 0..64 {
+            let engine_index = (7 - (i / 8)) * 8 + (i % 8);
+            flipped[i] = original[engine_index];
+        }
+
+        flipped
+    }
+    pub fn to_array(&self) -> [i8; 64] {
+        let mut squares = [0i8; 64];
+
+        for color in 0..2 {
+            for piece in 0..6 {
+                let mut bitboard = self.pieces[color][piece];
+
+                while bitboard != 0 {
+                    let sq = bitboard.trailing_zeros() as usize;
+
+                    squares[sq] = if color == 0 {
+                        (piece as i8) + 1
+                    } else {
+                        -((piece as i8) + 1)
+                    };
+
+                    // remove least significant bit
+                    bitboard &= bitboard - 1;
+                }
+            }
+        }
+
+        squares
+    }
 }
 
 /// Helper: convert algebraic notation like "e4" to square index (0-63)
